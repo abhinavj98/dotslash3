@@ -17,8 +17,9 @@ args = parser.parse_args()
 
 def main():
     with tf.Session() as sess:
-        prev_keypoint_scores = [0]*5
-        prev_pos_scores = [0]*5
+        # prev_keypoint_scores = [0]*5
+        # prev_pos_scores = [0]*5
+        
         model_cfg, model_outputs = posenet.load_model(args.model, sess)
         output_stride = model_cfg['output_stride']
 
@@ -33,8 +34,8 @@ def main():
 
         start = time.time()
         frame_count = 0
-        i = 0
-        j = 0 
+        # i = 0
+        # j = 0 
         while True:
             input_image, display_image, output_scale = posenet.read_cap(
                 cap, scale_factor=args.scale_factor, output_stride=output_stride)
@@ -55,10 +56,10 @@ def main():
 
             keypoint_coords *= output_scale
             # TODO this isn't particularly fast, use GL for drawing and display someday...
-            temp_pose_scores = sum(prev_pos_scores)/10 + pose_scores/2
-            temp_keypoint_scores = sum(prev_keypoint_scores)/10 + keypoint_scores/2
-            prev_pos_scores[i] = pose_scores
-            prev_keypoint_scores[i] = keypoint_scores
+            # temp_pose_scores = sum(prev_pos_scores)/10 + pose_scores/2
+            # temp_keypoint_scores = sum(prev_keypoint_scores)/10 + keypoint_scores/2
+            # prev_pos_scores[i] = pose_scores
+            # prev_keypoint_scores[i] = keypoint_scores
             
             overlay_image = posenet.draw_skel_and_kp(
                 display_image, temp_pose_scores, temp_keypoint_scores, keypoint_coords,
@@ -68,8 +69,8 @@ def main():
             frame_count += 1
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-            i = i+1
-            i = i%5
+            # i = i+1
+            # i = i%5
         print('Average FPS: ', frame_count / (time.time() - start))
 
 
