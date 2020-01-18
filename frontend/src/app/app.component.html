@@ -1,0 +1,7 @@
+
+<app-webcamfeed (pictureTaken)="handleImage($event)"></app-webcamfeed>
+<div class="snapshot" *ngIf="webcamImage">
+	<img [src]="webcamImage.imageAsDataUrl" />
+</div>
+
+<router-outlet></router-outlet>
