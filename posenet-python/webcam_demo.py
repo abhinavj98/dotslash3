@@ -20,6 +20,7 @@ PART_NAMES = {
     "leftHip":11, "rightHip":12, "leftKnee":13, "rightKnee":14, "leftAnkle":15, "rightAnkle":16
 }
 
+
 def lowpass(input,moving_arr,index,size):
     if(index<size-1):
         index+=1
@@ -31,21 +32,44 @@ def lowpass(input,moving_arr,index,size):
     return np.sum(moving_arr)/size
 
 STATES = {"pause":0, "up":1, "down":2}
-present_state = STATES["up"]
+present_state = {"left_arm":0, "right_arm":1}
 MAX = {"left_angle":0, "right_angle":1, "left_speed":2, "right_speed":3}
 MIN = {"left_angle":0, "right_angle":1, "left_speed":2, "right_speed":3}
-DATA = {"left_angle":0, "right_angle":1, "left_speed":2, "right_speed":3}
-'''
-MIN["left_angle"] = 7.97
-MIN["left_speed"] = -3
-MIN["right_angle"] = 9,44
-MIN["right_speed"] = -5.22
+DATA = {"left_angle":0, "right_angle":1, "left_speed":2, "right_speed":3, "avg_left_speed":4, "avg_right_speed":5}
+temp1 =0
+temp2 =0
 
-MAX["left_angle"] = 123.1
-MAX["left_speed"] = 10.96
-MAX["right_angle"] = 146.7
-MAX["right_speed"] = 0
-'''
+def pause():
+    if(DATA["left_angle"]>10 or DATA["left_speed"]>0.5):
+        present_state["left_arm"] = STATES["down"]
+    elif(DATA["left_angle"]< 115 or DATA["left_speed"]<-0.1):
+        present_state["left_arm"] = STATES["up"]
+    return present_state["left_arm"]    
+
+def up():
+    if(DATA["left_angle"]<15):
+        present_state["left_arm"] = STATES["pause"]
+    if(DATA["left_speed"]<-4):
+        print("Move your hand slowly")
+    if(DATA["left_speed"]>1):
+        present_state["left_arm"] = STATES["down"]
+        print("Pause State missed...")
+    return present_state["left_arm"]
+
+def down():
+    if(DATA["left_angle"]>110):
+        present_state["left_arm"] = STATES["pause"]
+    if(DATA["left_speed"]>10):
+        print("MOve your hand slowly")
+    if(DATA["left_speed"]<-0.1):
+        present_state["left_arm"] = STATES["up"]
+        print("Pause state missed")
+    return present_state["left_arm"]
+
+def fsm_arm(x):
+    switcher = {0:pause, 1:up, 2:down}
+    func=switcher.get(x)
+    return func()
 
 def init_param():
     MIN["left_angle"] = 1000
@@ -53,10 +77,14 @@ def init_param():
     MIN["right_angle"] = 1000
     MIN["right_speed"] = 1000
 
-    MAX["left_angle"] = 0
-    MAX["left_speed"] = 0
-    MAX["right_angle"] = 0
-    MAX["right_speed"] = 0
+    MAX["left_angle"] = -1000
+    MAX["left_speed"] = -1000
+    MAX["right_angle"] = -1000
+    MAX["right_speed"] = -1000
+    ti =0
+    tf =0
+    #temp1 =0
+    #temp2 =0
 
 def update_max():
     if(MAX["left_angle"] <= DATA["left_angle"]):
@@ -89,14 +117,6 @@ def get_angle(arr,num):
     dist2 = 0
     dist3 = 0
     if(num==0):
-        '''
-        x1 = arr[0,9,0]
-        y1 = arr[0,9,1]
-        x2 = arr[0,7,0]
-        y2 = arr[0,7,1]
-        x3 = arr[0,5,0]
-        y3 = arr[0,5,1]
-        '''
         x1 = arr[0,PART_NAMES["leftWrist"],0]
         y1 = arr[0,PART_NAMES["leftWrist"],1]
         x2 = arr[0,PART_NAMES["leftElbow"],0]
@@ -119,7 +139,14 @@ def get_angle(arr,num):
     return math.acos(cosine)*(180/math.pi) 
 
 
-
+def print_armstate(x):
+    if(x==0):
+        print("pause")
+    elif(x==1):
+        print("up")
+    elif(x==2):
+        print("down")
+    
 '''
 PART_NAMES = [
     "nose", "leftEye", "rightEye", "leftEar", "rightEar", "leftShoulder",
@@ -140,7 +167,7 @@ def main():
         # else:
         #     cap = cv2.VideoCapture(args.cam_id)
 
-        cap = cv2.VideoCapture("/home/dhruv/DOTSLASH/dotslash3/posenet-python/side_v1.mp4")
+        cap = cv2.VideoCapture("/home/dhruv/DOTSLASH/dotslash3/posenet-python/side_44.mp4")
         cap.set(3, args.cam_width)
         cap.set(4, args.cam_height)
 
@@ -148,11 +175,14 @@ def main():
         frame_count = 0
         prev_left_angle = 0
         prev_right_angle = 0
-        movingarr_size = 10
+        movingarr_size = 20
         movingarr_index = 0
         movingarr_left_angle = np.zeros(movingarr_size)
         movingarr_right_angle = np.zeros(movingarr_size)
+        temp1 = 0
+        temp2 = 0
         init_param()
+        
         while True:
             start_iter = time.time()
             input_image, display_image, output_scale = posenet.read_cap(
@@ -181,42 +211,35 @@ def main():
             
             left_angle = get_angle(keypoint_coords,0)
             right_angle = get_angle(keypoint_coords,1)
+            
             DATA["left_angle"] = lowpass(left_angle,movingarr_left_angle,movingarr_index,movingarr_size)
             DATA["right_angle"] = lowpass(right_angle,movingarr_right_angle,movingarr_index,movingarr_size)
             movingarr_index+=1
             update_max()
             update_min()
-            #print("langle:")
-            #print(opt_left_angle)
-            #print("rangle:")
-            #print(right_angle)
-            #print(keypoint_coords.shape)
             overlay_image = posenet.draw_skel_and_kp(
                 display_image, pose_scores, keypoint_scores, keypoint_coords,
                 min_pose_score=0.15, min_part_score=0.1)
             cv2.imshow('posenet', overlay_image)
             frame_count += 1
-            dt = time.time() - start_iter
             DATA["left_speed"] = (DATA["left_angle"] - prev_left_angle)
             DATA["right_speed"] = (DATA["right_angle"] - prev_right_angle)
             
-            print("left speed:")
-            print(DATA["left_speed"])
-            #print("right_speed:")
-            #print(right_speed)
-            
+            DATA["left_speed"]*=10
+            DATA["right_speed"]*=10
+            #print(DATA["left_speed"])
+            #print(MIN,MAX)
+            temp1= temp1 + abs(DATA["left_speed"])
+            temp2= temp2 + abs(DATA["right_speed"])
+            DATA["avg_left_speed"] = temp1/movingarr_index
+            DATA["avg_right_speed"] = temp2/movingarr_index 
             prev_left_angle = DATA["left_angle"]
             prev_right_angle = DATA["right_angle"]
-            print(MAX)
-            print(MIN)
+            print("angle:" + str(DATA["left_angle"]) + "avg speed:" + str(DATA["avg_left_speed"]))
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-            switch(present_state){
-                case STATES["up"]:
-                    if(DATA["left"])
-
-
-            }
+            #fsm_arm(present_state["left_arm"])
+            #print_armstate(present_state["left_arm"])
         print('Average FPS: ', frame_count / (time.time() - start))
         print(MAX)
         print(MIN)
