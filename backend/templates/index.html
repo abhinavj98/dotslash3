@@ -1,33 +1,251 @@
 <html>
 
 <head>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        /* Style the header */
+        
+        header {
+            background-color: rgba(56, 205, 255, 0.959);
+            padding: 30px;
+            text-align: center;
+            font-size: 35px;
+            color: white;
+        }
+        
+        span {
+            font-size: 25px;
+            text-align: center;
+            padding: 5px;
+        }
+        
+        hr {
+            border: 1px solid black;
+        }
+        /* Create two columns/boxes that floats next to each other */
+        
+        nav {
+            float: left;
+            width: 25%;
+            height: 1200px;
+            /* only for demonstration, should be removed */
+            background: rgb(168, 221, 248);
+            padding: 20px;
+        }
+        /* Style the list inside the menu */
+        
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        
+        article {
+            float: left;
+            padding: 20px;
+            width: 75%;
+            background-color: #fff;
+            height: 1200px;
+            /* only for demonstration, should be removed */
+        }
+        /* Clear floats after the columns */
+        
+        section:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+        /* Style the footer */
+        
+        footer {
+            background-color: #777;
+            padding: 10px;
+            text-align: center;
+            color: white;
+        }
+        /* Responsive layout - makes the two columns/boxes stack on top of each other instead of next to each other, on small screens */
+        
+        @media (max-width: 600px) {
+            nav,
+            article {
+                width: 100%;
+                height: auto;
+            }
+        }
+        
+        .card {
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+            transition: 0.3s;
+            width: 100%;
+            border-radius: 5px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            height: 40px;
+            text-align: center;
+            background: rgb(255, 255, 255);
+        }
+        
+        .card:hover {
+            box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+        }
+        
+        img {
+            border-radius: 5px 5px 5px 5px;
+        }
+        
+        .container {
+            padding: 12px 16px;
+        }
+        
+        .webcamfeed {
+            align-content: center;
+            padding: 2px;
+        }
+        
+        .webcamfeed img {
+            margin-left: 20%;
+            margin-right: 20%;
+            margin-top: 30px;
+            margin-bottom: 30px;
+        }
+        
+        a {
+            text-decoration: none;
+            text-emphasis: none;
+            text-decoration-color: #000;
+        }
+    </style>
+
     <title>Video Streaming Demonstration</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 </head>
 
 <body>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-    <script>
-        function showTime() {
-            $.ajax({
-                type: "get",
-                url: "/suggestion",
-                success: function(result) {
-                    $("#place_for_suggestions").html(result);
-                    console.log(result)
+    <header>
+        <h2>Web App</h2>
+    </header>
+
+    <section>
+        <nav>
+            <span>Exercies</span>
+            <hr/>
+            <ul class="wlist">
+
+                <li>
+                    <div class="card">
+                        <div class="container">
+                            <a href="#" class="e1">Preacher curls</a>
+                        </div>
+                    </div>
+                </li>
+                <li>
+                    <div class="card">
+                        <div class="container">
+                            <a href="#" class="e2">Side laterals</a>
+                        </div>
+                    </div>
+                </li>
+                <li>
+                    <div class="card">
+                        <div class="container">
+                            <a href="#" class="e3">Military press</a>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </nav>
+
+        <article>
+            <script>
+                function showTime() {
+                    $.ajax({
+                        type: "get",
+                        url: "/suggestion",
+                        success: function(result) {
+                            $("#place_for_suggestions").html(result);
+                            console.log(result)
+                        }
+                    })
                 }
-            })
-        }
 
-        $(document).ready(function() {
-            myVar = setInterval("showTime()", 1000);
+                $(document).ready(function() {
+                    myVar = setInterval("showTime()", 100);
+                });
+            </script>
+            <div class="intro">
+
+                <h1>Instructions</h1>
+                <hr />
+                <p></p>
+                <h1>Video Streaming</h1>
+                <hr style="border: 2px solids #000" />
+
+            </div>
+
+            <div class="webcamfeed">
+                <img src="{{ url_for('video_feed') }}">
+            </div>
+
+            <h1>Feedback</h1>
+            <hr style="border: 2px solids #000" />
+            <div id="place_for_suggestions"></div>
+
+        </article>
+    </section>
+    <footer>
+        <p>Footer</p>
+    </footer>
+</body>
+
+<script>
+    $(function() {
+        $('ul.wlist a.e1').on('click', function() {
+            //$('.intro p').text("exercise 1");
+            args = $(this).data('args');
+
+            $.ajax({
+                type: "GET",
+                data: args,
+                url: "{{ url_for('e1') }}",
+                success: function(data) {
+                    $('.intro p').html(data)
+                }
+            });
         });
-    </script>
-    <h1>Video Streaming Demonstration</h1>
-    <img src="{{ url_for('video_feed') }}">
-    <label>Feedback</label>
-    <div id="place_for_suggestions"></div>
-</body>
 
-</body>
+        $('ul.wlist a.e2').on('click', function() {
+            //$('.intro p').text("exercise 2");
+            args = $(this).data('args');
+
+            $.ajax({
+                type: "GET",
+                data: args,
+                url: "{{ url_for('e2') }}",
+                success: function(data) {
+                    $('.intro p').html(data)
+                }
+            });
+        });
+
+        $('ul.wlist a.e3').on('click', function() {
+            //$('.intro p').text("exercise 3");
+            args = $(this).data('args');
+
+            $.ajax({
+                type: "GET",
+                data: args,
+                url: "{{ url_for('e3') }}",
+                success: function(data) {
+                    $('.intro p').html(data)
+                }
+            });
+        });
+    });
+</script>
 
 </html>

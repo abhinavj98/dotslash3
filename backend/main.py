@@ -44,7 +44,17 @@ def video_feed():
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
          
+@app.route('/e1')
+def e1():
+    return render_template('e1.html')
 
+@app.route('/e2')
+def e2():
+    return render_template('e2.html')
+
+@app.route('/e3')
+def e3():
+    return render_template('e3.html')
 
 if __name__ == '__main__':
     app.run(debug = True)
