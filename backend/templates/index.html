@@ -1,0 +1,33 @@
+<html>
+
+<head>
+    <title>Video Streaming Demonstration</title>
+</head>
+
+<body>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script>
+        function showTime() {
+            $.ajax({
+                type: "get",
+                url: "/suggestion",
+                success: function(result) {
+                    $("#place_for_suggestions").html(result);
+                    console.log(result)
+                }
+            })
+        }
+
+        $(document).ready(function() {
+            myVar = setInterval("showTime()", 1000);
+        });
+    </script>
+    <h1>Video Streaming Demonstration</h1>
+    <img src="{{ url_for('video_feed') }}">
+    <label>Feedback</label>
+    <div id="place_for_suggestions"></div>
+</body>
+
+</body>
+
+</html>
