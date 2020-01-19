@@ -11,6 +11,9 @@ import numpy as np
 from functools import partial
 from utils import *
 import math
+import pyttsx3
+import time
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--model', type=int, default=101)
 parser.add_argument('--cam_id', type=int, default=0)
@@ -25,7 +28,7 @@ PART_NAMES = {
     "leftHip":11, "rightHip":12, "leftKnee":13, "rightKnee":14, "leftAnkle":15, "rightAnkle":16
 }
 
-STATES = {"pause":0, "up":1, "down":2}
+STATES = {"pause":0, "up":1, "down":2, "initial": 3}
 present_state = {"left_arm":0, "right_arm":1}
 MAX = {"left_angle":0, "right_angle":1, "left_speed":2, "right_speed":3}
 MIN = {"left_angle":0, "right_angle":1, "left_speed":2, "right_speed":3}
@@ -33,8 +36,15 @@ NORM = {"left_angle":0, "right_angle":1, "left_speed":2, "right_speed":3}
 DATA = {"left_angle":0, "right_angle":1, "left_speed":2, "right_speed":3, "avg_left_speed":4, "avg_right_speed":5}
 temp1 =0
 temp2 =0
-
-
+init_flag = 0
+miss_upflagr = 0
+miss_downflagr = 0
+miss_upflagl = 0
+miss_downflagl = 0
+present_state["left_arm"] = STATES["initial"]
+present_state["right_arm"] = STATES["initial"]
+counter = 0
+    
 app = Flask(__name__, static_folder='static')
 suggestion = ""
 def lowpass(input,moving_arr,index,size):
@@ -78,11 +88,14 @@ def up(x):
         present_state["left_arm"] = STATES["down"]
         print("Pause State missed...")
     '''
+    miss_upflagl = 0
+    miss_upflagr = 0
     if(x==0):
         if(NORM["left_angle"]<0.55 ):
             present_state["left_arm"] = STATES["pause"]
         elif(NORM["left_angle"]>0.55 and DATA["left_speed"]>5):
             present_state["left_arm"] = STATES["down"]
+            miss_upflagl = 1
             print("pause state missed")
         return present_state["left_arm"]
     elif(x==1):
@@ -90,15 +103,19 @@ def up(x):
             present_state["right_arm"] = STATES["pause"]
         elif(NORM["right_angle"]>0.55 and DATA["right_speed"]>5):
             present_state["right_arm"] = STATES["down"]
+            miss_upflagr = 1
             print("pause state missed")
         return present_state["right_arm"]
 
 def down(x):
+    miss_downflagl = 0
+    miss_downflagr = 0
     if(x==0):
         if(NORM["left_angle"]>0.90):
             present_state["left_arm"] = STATES["pause"]
         elif(NORM["left_angle"]<0.90 and DATA["left_speed"]<-5):
             present_state["left_arm"] = STATES["up"]
+            miss_downflagl = 1
             print("Pause state missed")
         return present_state["left_arm"]
     elif(x==1):
@@ -106,11 +123,31 @@ def down(x):
             present_state["right_arm"] = STATES["pause"]
         elif(NORM["right_angle"]<0.90 and DATA["right_speed"]<-5):
             present_state["right_arm"] = STATES["up"]
+            miss_downflagr = 1
             print("Pause state missed")
         return present_state["right_arm"]
 
+def init(x):
+    global init_flag, counter
+    present_state["left_arm"] = STATES["initial"]
+    present_state["right_arm"] = STATES["initial"]
+    if(init_flag == 0):
+        counter = counter +1
+    if(init_flag==0 and (DATA["left_angle"]<100 and DATA["left_angle"]>80) or (DATA["right_angle"]<100 and DATA["right_angle"]>70)):
+        time.sleep(1)
+        if((DATA["left_angle"]<100 and DATA["left_angle"]>80) or (DATA["right_angle"]<100 and DATA["right_angle"]>70)):
+            init_flag = 1
+            
+        # init_flag = 1 
+            present_state["left_arm"] = STATES["up"]
+            present_state["right_arm"] = STATES["up"]
+    if(x==0):
+        return present_state["left_arm"]
+    elif(x==1):
+        return present_state["right_arm"]  
+
 def fsm_arm(x,arm):
-    switcher = {0:partial(pause,arm), 1:partial(up,arm), 2:partial(down,arm)}
+    switcher = {0:partial(pause,arm), 1:partial(up,arm), 2:partial(down,arm), 3:partial(init,arm)}
     func=switcher.get(x)
     return func()
 
@@ -209,23 +246,40 @@ PART_NAMES = [
 '''
 def check_speed():
     sugg = ""
-    if(DATA["avg_left_speed"]>20):
-        sugg = "Move your left hand slowly"
-    if(DATA["avg_right_speed"]>20):
-        sugg = sugg + "MOve your right hand slowly"
+    if(init_flag==0):
+        sugg = "Please get into the starting position, with arms perpendicular to body"
+        return sugg
+    if(miss_upflagl ==1 ):
+        sugg = "push up left"
+        return sugg
+    elif(miss_downflagl==1):
+        sugg = "push downward left"
+        return sugg
+    if(miss_upflagr ==1 ):
+        sugg = "push up right"
+        return sugg
+    elif(miss_downflagr == 1):
+        sugg = "push downward right"
+        return sugg
+    elif(DATA["avg_left_speed"]>20):
+        sugg = "Move your hands slowly"
+    elif(DATA["avg_right_speed"]>20):
+        sugg = sugg + "Move your hands slowly"
         return sugg
     else:
         sugg = "okay"
     return sugg
 
 
-
+    
 def process_frame(frame):
     return "nice"
     
 @app.route('/suggestion')
 def sugge():
-    global suggestion
+    global suggestion, engine
+    # engine.say(suggestion)
+    # engine.runAndWait()
     return (suggestion)
 
 @app.route('/')
@@ -372,6 +426,8 @@ def e3():
     return render_template('e3.html')
 
 if __name__ == '__main__':
-    app.run(debug = True)
+    global engine
+    engine = pyttsx3.init()
+    app.run(debug = True, port = 8090)
 
  
