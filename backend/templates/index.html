@@ -33,7 +33,7 @@
         nav {
             float: left;
             width: 25%;
-            height: 1200px;
+            height: 2000px;
             /* only for demonstration, should be removed */
             background: rgb(168, 221, 248);
             padding: 20px;
@@ -50,7 +50,7 @@
             padding: 20px;
             width: 75%;
             background-color: #fff;
-            height: 1200px;
+            height: 2000px;
             /* only for demonstration, should be removed */
         }
         /* Clear floats after the columns */
@@ -119,10 +119,23 @@
             text-emphasis: none;
             text-decoration-color: #000;
         }
+        
+        .tutorial {
+            padding: 5px;
+            align-content: center;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .tutorial div {
+            text-align: center;
+            align-content: center;
+            padding: 5px;
+        }
     </style>
 
     <title>Video Streaming Demonstration</title>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 </head>
 
 <body>
@@ -177,11 +190,40 @@
                     myVar = setInterval("showTime()", 100);
                 });
             </script>
+
             <div class="intro">
 
                 <h1>Instructions</h1>
                 <hr />
                 <p></p>
+            </div>
+
+
+
+            <div class="tutorial">
+                <h1>Turorial</h1>
+                <hr />
+                <div id="tut1">
+                    <video width="640" height="480" controls>
+                            <source src = {{url_for('static', filename='e1.mp4')}} type="video/mp4" >
+                            Your browser does not support the video tag.
+                        </video>
+                </div>
+                <div id="tut2">
+                    <video width="640" height="480" controls>
+                            <source src = {{url_for('static', filename='e2.mp4')}} type="video/mp4" >
+                            Your browser does not support the video tag.
+                        </video>
+                </div>
+                <div id="tut3">
+                    <video width="640" height="480" controls>
+                            <source src = {{url_for('static', filename='e3.mp4')}} type="video/mp4" >
+                            Your browser does not support the video tag.
+                        </video>
+                </div>
+            </div>
+
+            <div class="streamer">
                 <h1>Video Streaming</h1>
                 <hr style="border: 2px solids #000" />
 
@@ -203,6 +245,7 @@
 </body>
 
 <script>
+    var path = ""
     $(function() {
         $('ul.wlist a.e1').on('click', function() {
             //$('.intro p').text("exercise 1");
@@ -214,6 +257,12 @@
                 url: "{{ url_for('e1') }}",
                 success: function(data) {
                     $('.intro p').html(data)
+                    path = "e1test.mp4"
+                    console.log(path)
+                        //$('#tut').attr('src', "{{ url_for('static', filename='side_43.mp4') }}")
+                    $('#tut1').show();
+                    $('#tut2').hide();
+                    $('#tut3').hide();
                 }
             });
         });
@@ -228,6 +277,12 @@
                 url: "{{ url_for('e2') }}",
                 success: function(data) {
                     $('.intro p').html(data)
+                    path = "e2test.mp4"
+                    console.log(path)
+                        //$('#tut').attr('src', "{{ url_for('static', filename='side_42.mp4') }}")
+                    $('#tut1').hide();
+                    $('#tut2').show();
+                    $('#tut3').hide();
                 }
             });
         });
@@ -242,6 +297,12 @@
                 url: "{{ url_for('e3') }}",
                 success: function(data) {
                     $('.intro p').html(data)
+                    path = "e3test.mp4"
+                    console.log(path)
+                        //$('#tut').attr('src', "{{ url_for('static', filename='side_44.mp4') }}")
+                    $('#tut1').hide();
+                    $('#tut2').hide();
+                    $('#tut3').show();
                 }
             });
         });
